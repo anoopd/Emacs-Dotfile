@@ -66,7 +66,7 @@
   (which-key-mode 1))
 
 (use-package avy
-:ensure t
+:straight t
 :bind(("M-g" . avy-goto-word-0))
 )
 
@@ -113,20 +113,6 @@
          (file+head "python/%<%Y%m%d%H%M%S>-${slug}.org" "#+title: ${title}\n#+filetags: :article:\n")
          :immediate-finish t
          :unnarrowed t)))
-
-(cl-defmethod org-roam-node-type ((node org-roam-node))
-  "Return the TYPE of NODE."
-  (condition-case nil
-      (file-name-nondirectory
-       (directory-file-name
-        (file-name-directory
-         (file-relative-name (org-roam-node-file node) org-roam-directory))))
-    (error "")))
-
-(setq org-roam-node-display-template
-      (concat "${type:15} ${title:*} " (propertize "${tags:10}" 'face 'org-tag)))
-
-
 
 ;; Experimental org-roam End	
 
