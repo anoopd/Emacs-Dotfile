@@ -1,0 +1,9 @@
+backups/
+auto-save-list/
+eln-cache/
+elpaca/
+elpa/
+*.el~
+org-roam.db
+org-clock-save.el
+recentf

@@ -1,0 +1,11 @@
+;;;; Emacs Bookmark Format Version 1;;;; -*- coding: utf-8-emacs; mode: lisp-data -*-
+;;; This format is meant to be slightly human-readable;
+;;; nevertheless, you probably don't want to edit it.
+;;; -*- End Of Bookmark File Format Version Stamp -*-
+(("org-capture-last-stored"
+ (filename . "~/org-roam/exams/cdl/basic_network_infrastructure_terminology.org")
+ (front-context-string . "* Exam Topic\n\n\n*")
+ (rear-context-string . "2-21 Sat 09:38]\n")
+ (position . 175)
+ (last-modified 27033 32263 470604 123000))
+)
