@@ -1,34 +1,24 @@
-;;; init.el --- Minimal Org-Roam Configuration with Elpaca -*- lexical-binding: t -*-
+;;; init.el --- Emacs Configuration -*- lexical-binding: t -*-
 
 ;;; Commentary:
-;; Clean, focused Emacs setup for org-roam note-taking
+;; Emacs setup for org-roam note-taking and ML study
 ;; Package Manager: Elpaca
-;; Features: Evil (Vim), Vertico (fuzzy finder), Org-roam, Olivetti (zen mode)
+;; Features: Evil (Vim), Vertico, Org-roam, Magit, Olivetti
 
 ;;; Code:
 
 ;; ============================================================================
-;; ELPACA BOOTSTRAP (Package Manager)
+;; ENCODING (must be first)
 ;; ============================================================================
-
-;;; init.el --- Minimal Org-Roam Configuration with Elpaca -*- lexical-binding: t -*-
-
-;; ============================================================================
-;; ELPACA BOOTSTRAP (Latest Version)
-;; ============================================================================
-
-;;; init.el --- Minimal Org-Roam Configuration with Elpaca -*- lexical-binding: t -*-
-
-
-
 
 (set-selection-coding-system 'utf-8)
 (prefer-coding-system 'utf-8-unix)
 (set-default-coding-systems 'utf-8-unix)
 (set-terminal-coding-system 'utf-8)
 (set-keyboard-coding-system 'utf-8)
+
 ;; ============================================================================
-;; ELPACA BOOTSTRAP (Latest Version)
+;; ELPACA BOOTSTRAP
 ;; ============================================================================
 
 (defvar elpaca-installer-version 0.11)
@@ -76,34 +66,21 @@
 (elpaca elpaca-use-package
   (elpaca-use-package-mode))
 
-;; Block until current queue processed
+;; Block until elpaca bootstrap is complete
 (elpaca-wait)
 
 ;; ============================================================================
-;; REST OF YOUR CONFIG BELOW...
-;; ============================================================================
-;; ============================================================================
-;; REST OF YOUR CONFIG BELOW...
+;; BASIC SETTINGS (before any packages load)
 ;; ============================================================================
 
-(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
-(require 'whisper)
-(require 'keybindings)
-(require 'org-agenda-config)
-(require 'simple-clock-config)
-(require 'spell-config)
-(require 'org-roam-config)
-;; ============================================================================
-;; BASIC SETTINGS (Clean UI)
-;; ============================================================================
 ;; Disable startup screen
 (setq inhibit-startup-message t
       inhibit-startup-echo-area-message t
       initial-scratch-message nil)
 
-;; Clean UI
+;; Clean UI — disable early to avoid flicker
 (menu-bar-mode -1)
-(when (fboundp 'tool-bar-mode) (tool-bar-mode -1))
+(when (fboundp 'tool-bar-mode)   (tool-bar-mode -1))
 (when (fboundp 'scroll-bar-mode) (scroll-bar-mode -1))
 (setq ring-bell-function 'ignore)
 
@@ -115,7 +92,6 @@
  word-wrap t
  fill-column 80)
 
-;; Show column number
 (column-number-mode 1)
 
 ;; Better scrolling
@@ -128,11 +104,13 @@
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 ;; Keep folders clean
-(setq backup-directory-alist `(("." . ,(expand-file-name "backups" user-emacs-directory)))
-      auto-save-file-name-transforms `((".*" ,(expand-file-name "auto-save-list/" user-emacs-directory) t))
+(setq backup-directory-alist
+      `(("." . ,(expand-file-name "backups" user-emacs-directory)))
+      auto-save-file-name-transforms
+      `((".*" ,(expand-file-name "auto-save-list/" user-emacs-directory) t))
       create-lockfiles nil)
 
-;; UTF-8 everywhere
+;; UTF-8 everywhere (second pass after packages)
 (set-default-coding-systems 'utf-8)
 (prefer-coding-system 'utf-8)
 
@@ -140,55 +118,21 @@
 (global-auto-revert-mode 1)
 (setq global-auto-revert-non-file-buffers t)
 
+;; Performance
+(setq read-process-output-max (* 1024 1024))
+(setq inhibit-compacting-font-caches t)
 
-(use-package zoxide
-  :ensure t
-  :bind (("C-c z" . zoxide-find-file)    ; Jump to a file in a frequent directory
-         ("C-c d" . zoxide-cd))           ; Change the default-directory (cd)
-  :config
-  ;; This ensures zoxide.el uses your existing zoxide database
-  (setq zoxide-db-file "~/.local/share/zoxide/db.json"))
-
-
-(use-package recentf
-  :config
-  (recentf-mode 1)
-  (setq recentf-max-menu-items 25
-        recentf-max-saved-items 50)
-  ;; Save the list every 5 minutes and on Emacs shutdown
-  (run-at-time nil (* 5 60) 'recentf-save-list))
+;; Default directory
+(setq default-directory "~/org-roam/")
 
 ;; ============================================================================
-;; THEME
+;; LISP DIRECTORY
 ;; ============================================================================
 
-(use-package doom-themes
-  :ensure t
-  :config
-  (setq doom-themes-enable-bold t
-        doom-themes-enable-italic t)
-  (load-theme 'doom-gruvbox t)
-  (doom-themes-org-config))
-
-;; Modeline
-(use-package doom-modeline
-  :ensure t
-  :init
-  (doom-modeline-mode 1)
-  :custom
-  (doom-modeline-height 30)
-  (doom-modeline-bar-width 4)
-  (doom-modeline-buffer-file-name-style 'relative-to-project)
-  (doom-modeline-icon t)
-  (doom-modeline-major-mode-icon t)
-  (doom-modeline-minor-modes nil)
-  )
-;; Icons (required for doom-modeline)
-(use-package nerd-icons
-  :ensure t)
+(add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
 ;; ============================================================================
-;; EVIL MODE (Vim Keybindings)
+;; EVIL MODE (load early — other packages depend on it)
 ;; ============================================================================
 
 (use-package evil
@@ -204,11 +148,11 @@
   (evil-mode 1)
   (evil-set-initial-state 'dashboard-mode 'emacs)
   (evil-set-initial-state 'elpaca-ui-mode 'emacs)
-  
+
   ;; ESC quits everywhere
   (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
-  
-  ;; Use visual line motions even outside of visual-line-mode buffers
+
+  ;; Visual line motions
   (evil-global-set-key 'motion "j" 'evil-next-visual-line)
   (evil-global-set-key 'motion "k" 'evil-previous-visual-line))
 
@@ -221,21 +165,45 @@
 (use-package evil-org
   :ensure t
   :after (evil org)
-  :hook ((org-mode . evil-org-mode)
+  :hook ((org-mode        . evil-org-mode)
          (org-agenda-mode . evil-org-mode))
   :config
   (require 'evil-org-agenda)
   (evil-org-agenda-set-keys))
 
-;; In your org-config.el
-(with-eval-after-load 'org
-  (setq org-agenda-files
-        (list
-         (expand-file-name "journey.org" "~/org-roam/")
-         (expand-file-name "inbox.org" "~/org-roam/")
-         (expand-file-name "roam-dailies/" "~/org-roam/"))))
+;; Wait for evil before loading keybindings
+(elpaca-wait)
+
 ;; ============================================================================
-;; COMPLETION & NAVIGATION (Vertico + Consult + Orderless)
+;; THEME (load before other UI packages)
+;; ============================================================================
+
+(use-package doom-themes
+  :ensure t
+  :config
+  (setq doom-themes-enable-bold t
+        doom-themes-enable-italic t)
+  (load-theme 'doom-gruvbox t)
+  (doom-themes-org-config))
+
+(use-package nerd-icons
+  :ensure t)
+
+(use-package doom-modeline
+  :ensure t
+  :after nerd-icons
+  :init
+  (doom-modeline-mode 1)
+  :custom
+  (doom-modeline-height 30)
+  (doom-modeline-bar-width 4)
+  (doom-modeline-buffer-file-name-style 'relative-to-project)
+  (doom-modeline-icon t)
+  (doom-modeline-major-mode-icon t)
+  (doom-modeline-minor-modes nil))
+
+;; ============================================================================
+;; COMPLETION & NAVIGATION
 ;; ============================================================================
 
 (use-package vertico
@@ -263,23 +231,23 @@
 
 (use-package consult
   :ensure t
-  :bind (("C-s" . consult-line)
-         ("C-x b" . consult-buffer)
+  :bind (("C-s"     . consult-line)
+         ("C-x b"   . consult-buffer)
          ("C-x C-r" . consult-recent-file)
-         ("C-c g" . consult-ripgrep)
+         ("C-c g"   . consult-ripgrep)
          :map evil-normal-state-map
-         ("/" . consult-line)
-         ("SPC b" . consult-buffer)
-         ("SPC f" . find-file)
-         ("SPC r" . consult-recent-file))
+         ("/"       . consult-line)
+         ("SPC b"   . consult-buffer)
+         ("SPC f"   . find-file)
+         ("SPC r"   . consult-recent-file))
   :config
   (setq consult-narrow-key "<"
         consult-line-start-from-top t))
 
 (use-package embark
   :ensure t
-  :bind (("C-." . embark-act)
-         ("C-;" . embark-dwim)
+  :bind (("C-."   . embark-act)
+         ("C-;"   . embark-dwim)
          ("C-h B" . embark-bindings)))
 
 (use-package embark-consult
@@ -287,16 +255,18 @@
   :after (embark consult)
   :hook (embark-collect-mode . consult-preview-at-point-mode))
 
+;; Wait for consult before loading anything that depends on it
+(elpaca-wait)
 
 ;; ============================================================================
 ;; ORG MODE
 ;; ============================================================================
 
 (use-package org
-  :ensure nil ; Built-in
+  :ensure nil
   :hook (org-mode . (lambda ()
-                     (org-indent-mode)
-                     (visual-line-mode)))
+                      (org-indent-mode)
+                      (visual-line-mode)))
   :config
   (setq org-hide-emphasis-markers t
         org-pretty-entities t
@@ -308,7 +278,14 @@
         org-confirm-babel-evaluate nil
         org-src-fontify-natively t
         org-src-tab-acts-natively t
-        org-edit-src-content-indentation 0))
+        org-edit-src-content-indentation 0)
+
+  ;; Org agenda files
+  (setq org-agenda-files
+        (list
+         (expand-file-name "journey.org"    "~/org-roam/")
+         (expand-file-name "inbox.org"      "~/org-roam/")
+         (expand-file-name "roam-dailies/"  "~/org-roam/"))))
 
 (use-package org-modern
   :ensure t
@@ -318,13 +295,13 @@
         org-modern-table-vertical 1
         org-modern-table-horizontal 0.2
         org-modern-list '((43 . "➤")
-                         (45 . "–")
-                         (42 . "•"))
+                          (45 . "–")
+                          (42 . "•"))
         org-modern-block-name
         '((t . t)
-          ("src" "»" "«")
+          ("src"     "»"  "«")
           ("example" "»–" "–«")
-          ("quote" "❝" "❞"))))
+          ("quote"   "❝"  "❞"))))
 
 (use-package visual-fill-column
   :ensure t
@@ -332,6 +309,58 @@
   :config
   (setq-default visual-fill-column-center-text t
                 visual-fill-column-width 100))
+
+;; Wait for org before loading org-dependent lisp files
+(elpaca-wait)
+
+;; ============================================================================
+;; LISP FILES (loaded after all dependencies are ready)
+;; ============================================================================
+
+(require 'whisper)
+(require 'spell-config)
+(require 'simple-clock-config)
+(require 'org-agenda-config)
+(require 'org-roam-config)    ;; contains org-roam + consult-org-roam
+(require 'magit-config)       ;; contains magit + forge
+(require 'keybindings)        ;; load keybindings last
+
+;; ============================================================================
+;; UTILITIES
+;; ============================================================================
+
+(use-package recentf
+  :config
+  (recentf-mode 1)
+  (setq recentf-max-menu-items 25
+        recentf-max-saved-items 50)
+  (run-at-time nil (* 5 60) 'recentf-save-list))
+
+(use-package zoxide
+  :ensure t
+  :bind (("C-c z" . zoxide-find-file)
+         ("C-c d" . zoxide-cd))
+  :config
+  (setq zoxide-db-file "~/.local/share/zoxide/db.json"))
+
+(use-package helpful
+  :ensure t
+  :bind (("C-h f" . helpful-callable)
+         ("C-h v" . helpful-variable)
+         ("C-h k" . helpful-key)
+         ("C-h F" . helpful-function)
+         ("C-h C" . helpful-command)))
+
+(use-package rainbow-delimiters
+  :ensure t
+  :hook (prog-mode . rainbow-delimiters-mode))
+
+(use-package super-save
+  :ensure t
+  :config
+  (super-save-mode +1)
+  (setq super-save-auto-save-when-idle t
+        auto-save-default nil))
 
 ;; ============================================================================
 ;; ZEN MODE
@@ -342,7 +371,7 @@
   :config
   (setq olivetti-body-width 100
         olivetti-minimum-body-width 80)
-  
+
   (defun my/toggle-zen-mode ()
     "Toggle distraction-free writing mode."
     (interactive)
@@ -357,7 +386,7 @@
         (when (fboundp 'display-line-numbers-mode)
           (display-line-numbers-mode -1))
         (doom-modeline-mode -1))))
-  
+
   :bind (("C-c z" . my/toggle-zen-mode)
          :map evil-normal-state-map
          ("SPC z" . my/toggle-zen-mode)))
@@ -375,44 +404,19 @@
          ("SPC w" . writeroom-mode)))
 
 ;; ============================================================================
-;; UTILITIES
-;; ============================================================================
-
-(use-package helpful
-  :ensure t
-  :bind (("C-h f" . helpful-callable)
-         ("C-h v" . helpful-variable)
-         ("C-h k" . helpful-key)
-         ("C-h F" . helpful-function)
-         ("C-h C" . helpful-command)))
-
-(use-package rainbow-delimiters
-  :ensure t
-  :hook (prog-mode . rainbow-delimiters-mode))
-
-;; Auto-save
-(use-package super-save
-  :ensure t
-  :config
-  (super-save-mode +1)
-  (setq super-save-auto-save-when-idle t
-        auto-save-default nil))
-
-;; ============================================================================
 ;; CUSTOM KEYBINDINGS (Space Leader)
 ;; ============================================================================
 
 (with-eval-after-load 'evil
-  ;; Clear space in normal mode
   (evil-define-key 'normal 'global (kbd "SPC") nil)
-  
+
   ;; File operations
   (evil-define-key 'normal 'global
     (kbd "SPC f f") 'find-file
     (kbd "SPC f s") 'save-buffer
     (kbd "SPC f r") 'consult-recent-file
     (kbd "SPC f d") 'dired)
-  
+
   ;; Buffer operations
   (evil-define-key 'normal 'global
     (kbd "SPC b b") 'consult-buffer
@@ -420,7 +424,7 @@
     (kbd "SPC b n") 'next-buffer
     (kbd "SPC b p") 'previous-buffer
     (kbd "SPC b s") 'save-buffer)
-  
+
   ;; Window operations
   (evil-define-key 'normal 'global
     (kbd "SPC w v") 'split-window-right
@@ -431,58 +435,40 @@
     (kbd "SPC w j") 'evil-window-down
     (kbd "SPC w k") 'evil-window-up
     (kbd "SPC w l") 'evil-window-right)
-  
+
   ;; Search
   (evil-define-key 'normal 'global
     (kbd "SPC s s") 'consult-line
     (kbd "SPC s g") 'consult-ripgrep
     (kbd "SPC s b") 'consult-buffer)
-  
+
   ;; Quit
   (evil-define-key 'normal 'global
     (kbd "SPC q q") 'save-buffers-kill-terminal
     (kbd "SPC q Q") 'kill-emacs))
 
 ;; ============================================================================
-;; PERFORMANCE
+;; WSL CLIPBOARD
 ;; ============================================================================
 
-(setq read-process-output-max (* 1024 1024)) ; 1MB
-(setq inhibit-compacting-font-caches t)
-
-;; ============================================================================
-;; STARTUP
-;; ============================================================================
-
-(setq default-directory "~/org-roam/")
-
-;; Elpaca finished message
-(add-hook 'elpaca-after-init-hook
-          (lambda ()
-            (message "Elpaca finished! Ready to take notes 📝")))
-
-;;; init.el ends here
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(package-selected-packages '(which-key)))
-(custom-set-faces
- ;; custom-set-faces was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- )
-
-;; Copy to windows clipboard using clip 
 (setq select-enable-clipboard t)
 (setq select-enable-primary t)
 
 (defun wsl-copy-to-clipboard (text &optional push)
+  "Copy TEXT to Windows clipboard via clip.exe."
   (let ((process-connection-type nil))
     (let ((proc (start-process "clip.exe" nil "clip.exe")))
       (process-send-string proc text)
       (process-send-eof proc))))
 
 (setq interprogram-cut-function #'wsl-copy-to-clipboard)
+
+;; ============================================================================
+;; STARTUP MESSAGE
+;; ============================================================================
+
+(add-hook 'elpaca-after-init-hook
+          (lambda ()
+            (message "Elpaca finished! Ready to take notes 📝")))
+
+;;; init.el ends here
